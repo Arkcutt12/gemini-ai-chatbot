@@ -1,10 +1,5 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-
 import {
   Upload,
   FileText,
@@ -12,6 +7,10 @@ import {
   CheckCircle,
   X
 } from "lucide-react";
+import { useState, useCallback } from 'react';
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { validateDXFFile } from '@/lib/api/dxf-analysis';
 

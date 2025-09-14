@@ -1,14 +1,5 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-
 import {
   Upload,
   FileText,
@@ -19,6 +10,14 @@ import {
   Loader2,
   Download
 } from "lucide-react";
+import { useState, useCallback } from 'react';
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 import { quoteWorkflow, QuoteWorkflowResult } from '@/lib/workflows/quote-workflow';
 
@@ -158,7 +157,7 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
           return (
             <div key={step} className="flex items-center">
               <div className={`
-                flex items-center justify-center w-10 h-10 rounded-full border-2 
+                flex items-center justify-center size-10 rounded-full border-2 
                 ${status === 'completed' ? 'bg-green-500 border-green-500 text-white' :
                   status === 'current' ? 'bg-blue-500 border-blue-500 text-white' :
                   'bg-gray-100 border-gray-300 text-gray-400'}

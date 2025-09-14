@@ -1,10 +1,10 @@
 'use client';
 
+import { Clock, Package, Ruler, Zap } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-import { Clock, Package, Ruler, Zap } from "lucide-react";
 
 interface QuoteResultProps {
   quote: {
