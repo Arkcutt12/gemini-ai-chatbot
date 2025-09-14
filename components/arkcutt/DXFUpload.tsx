@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
-import { 
-  Upload, 
-  FileText, 
-  AlertCircle, 
+import { Card, CardContent } from "@/components/ui/card";
+
+import {
+  Upload,
+  FileText,
+  AlertCircle,
   CheckCircle,
   X
 } from "lucide-react";
+
 import { validateDXFFile } from '@/lib/api/dxf-analysis';
 
 interface DXFUploadProps {
@@ -105,7 +108,7 @@ export function DXFUpload({
           {!selectedFile ? (
             <>
               <Upload className={`
-                mx-auto h-12 w-12 mb-4
+                mx-auto size-12 mb-4
                 ${isDragOver ? 'text-blue-500' : 'text-gray-400'}
               `} />
               <h3 className="text-lg font-semibold mb-2">
@@ -122,13 +125,13 @@ export function DXFUpload({
             </>
           ) : (
             <>
-              <CheckCircle className="mx-auto h-12 w-12 mb-4 text-green-500" />
+              <CheckCircle className="mx-auto size-12 mb-4 text-green-500" />
               <h3 className="text-lg font-semibold mb-2 text-green-800">
                 Archivo validado correctamente
               </h3>
               <div className="bg-white p-4 rounded-lg border inline-block">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-8 w-8 text-blue-500" />
+                  <FileText className="size-8 text-blue-500" />
                   <div className="text-left">
                     <p className="font-medium">{selectedFile.name}</p>
                     <p className="text-sm text-muted-foreground">
@@ -141,7 +144,7 @@ export function DXFUpload({
                     onClick={handleRemoveFile}
                     className="ml-2"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -172,7 +175,7 @@ export function DXFUpload({
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              <AlertCircle className="size-5 text-red-500 mt-0.5" />
               <div>
                 <h4 className="font-semibold text-red-800 mb-2">
                   Errores de validación:

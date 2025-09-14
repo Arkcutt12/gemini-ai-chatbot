@@ -2,7 +2,6 @@ import { convertToCoreMessages, Message, streamText, tool } from "ai";
 import { z } from "zod";
 
 import { chatGpt4oModel } from "@/ai";
-import { quoteWorkflow } from "@/lib/workflows/quote-workflow";
 import { getArkcuttKnowledge } from "@/ai/arkcutt-actions";
 import { auth } from "@/app/(auth)/auth";
 import {
@@ -13,6 +12,7 @@ import {
   saveChat,
 } from "@/db/queries";
 import { generateUUID } from "@/lib/utils";
+import { quoteWorkflow } from "@/lib/workflows/quote-workflow";
 
 function parseShapeDescription(description: string) {
   const lowerDesc = description.toLowerCase();

@@ -1,19 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
-  Truck, 
-  Clock, 
+
+import {
+  MapPin,
+  Truck,
+  Clock,
   Euro,
   Phone,
   Mail
 } from "lucide-react";
+
 import { WORKSHOPS, calculateDeliveryCost, type Workshop } from '@/lib/data/workshops';
 
 interface DeliverySelectorProps {
@@ -82,17 +85,17 @@ export function DeliverySelector({ onSelect }: DeliverySelectorProps) {
           onClick={() => setSelectedType('pickup')}
         >
           <CardContent className="p-6 text-center">
-            <MapPin className={`mx-auto h-8 w-8 mb-3 ${
+            <MapPin className={`mx-auto size-8 mb-3 ${
               selectedType === 'pickup' ? 'text-blue-500' : 'text-gray-400'
             }`} />
             <h3 className="font-semibold mb-2">Recogida en taller</h3>
             <div className="text-sm text-muted-foreground space-y-1">
               <p className="flex items-center justify-center gap-1">
-                <Euro className="h-3 w-3" />
+                <Euro className="size-3" />
                 Gratis
               </p>
               <p className="flex items-center justify-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="size-3" />
                 2-3 días
               </p>
             </div>
@@ -112,17 +115,17 @@ export function DeliverySelector({ onSelect }: DeliverySelectorProps) {
           onClick={() => setSelectedType('shipping')}
         >
           <CardContent className="p-6 text-center">
-            <Truck className={`mx-auto h-8 w-8 mb-3 ${
+            <Truck className={`mx-auto size-8 mb-3 ${
               selectedType === 'shipping' ? 'text-blue-500' : 'text-gray-400'
             }`} />
             <h3 className="font-semibold mb-2">Envío a domicilio</h3>
             <div className="text-sm text-muted-foreground space-y-1">
               <p className="flex items-center justify-center gap-1">
-                <Euro className="h-3 w-3" />
+                <Euro className="size-3" />
                 Desde €12.50
               </p>
               <p className="flex items-center justify-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="size-3" />
                 4-6 días
               </p>
             </div>
@@ -153,15 +156,15 @@ export function DeliverySelector({ onSelect }: DeliverySelectorProps) {
                       
                       <div className="space-y-1 text-sm text-muted-foreground">
                         <p className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3" />
+                          <MapPin className="size-3" />
                           {workshop.address}
                         </p>
                         <p className="flex items-center gap-2">
-                          <Phone className="h-3 w-3" />
+                          <Phone className="size-3" />
                           {workshop.contact.phone}
                         </p>
                         <p className="flex items-center gap-2">
-                          <Mail className="h-3 w-3" />
+                          <Mail className="size-3" />
                           {workshop.contact.email}
                         </p>
                       </div>

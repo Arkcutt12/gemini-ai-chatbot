@@ -1,26 +1,30 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Upload, 
-  FileText, 
-  Settings, 
-  Truck, 
-  CheckCircle, 
+
+import {
+  Upload,
+  FileText,
+  Settings,
+  Truck,
+  CheckCircle,
   AlertCircle,
   Loader2,
   Download
 } from "lucide-react";
-import { DXFUpload } from './DXFUpload';
-import { DeliverySelector } from './DeliverySelector';
-import { QuoteResult } from './quote-result';
+
 import { quoteWorkflow, QuoteWorkflowResult } from '@/lib/workflows/quote-workflow';
+
+import { DeliverySelector } from './DeliverySelector';
+import { DXFUpload } from './DXFUpload';
+import { QuoteResult } from './quote-result';
 
 interface QuoteWizardProps {
   onComplete?: (result: QuoteWorkflowResult) => void;
@@ -127,11 +131,11 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
 
   const getStepIcon = (step: Step) => {
     switch (step) {
-      case 'upload': return <Upload className="h-4 w-4" />;
-      case 'material': return <Settings className="h-4 w-4" />;
-      case 'contact': return <FileText className="h-4 w-4" />;
-      case 'delivery': return <Truck className="h-4 w-4" />;
-      case 'result': return <CheckCircle className="h-4 w-4" />;
+      case 'upload': return <Upload className="size-4" />;
+      case 'material': return <Settings className="size-4" />;
+      case 'contact': return <FileText className="size-4" />;
+      case 'delivery': return <Truck className="size-4" />;
+      case 'result': return <CheckCircle className="size-4" />;
     }
   };
 
@@ -176,7 +180,7 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-red-800">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="size-4" />
               {error}
             </div>
           </CardContent>
@@ -187,7 +191,7 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
       {isProcessing && (
         <Card>
           <CardContent className="p-8 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <Loader2 className="size-8 animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">Procesando solicitud...</p>
           </CardContent>
         </Card>
@@ -373,7 +377,7 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <CheckCircle className="size-5 text-green-500" />
                     ¡Presupuesto generado!
                   </CardTitle>
                 </CardHeader>
@@ -400,7 +404,7 @@ export function QuoteWizard({ onComplete }: QuoteWizardProps) {
                       Confirmar pedido
                     </Button>
                     <Button variant="outline" className="flex items-center gap-2">
-                      <Download className="h-4 w-4" />
+                      <Download className="size-4" />
                       Descargar PDF
                     </Button>
                   </div>

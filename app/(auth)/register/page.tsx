@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useActionState } from "react-dom";
 import { toast } from "sonner";
 
 import { AuthForm } from "@/components/custom/auth-form";
