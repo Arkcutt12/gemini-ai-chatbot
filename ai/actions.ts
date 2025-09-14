@@ -1,7 +1,7 @@
-import { generateObject } from "ai";
+import { streamText } from "ai";
 import { z } from "zod";
 
-import { geminiFlashModel } from ".";
+import { chatGpt4oModel } from ".";
 
 export async function generateSampleFlightStatus({
   flightNumber,
@@ -10,34 +10,57 @@ export async function generateSampleFlightStatus({
   flightNumber: string;
   date: string;
 }) {
-  const { object: flightStatus } = await generateObject({
-    model: geminiFlashModel,
-    prompt: `Flight status for flight number ${flightNumber} on ${date}`,
-    schema: z.object({
-      flightNumber: z.string().describe("Flight number, e.g., BA123, AA31"),
-      departure: z.object({
-        cityName: z.string().describe("Name of the departure city"),
-        airportCode: z.string().describe("IATA code of the departure airport"),
-        airportName: z.string().describe("Full name of the departure airport"),
-        timestamp: z.string().describe("ISO 8601 departure date and time"),
-        terminal: z.string().describe("Departure terminal"),
-        gate: z.string().describe("Departure gate"),
-      }),
-      arrival: z.object({
-        cityName: z.string().describe("Name of the arrival city"),
-        airportCode: z.string().describe("IATA code of the arrival airport"),
-        airportName: z.string().describe("Full name of the arrival airport"),
-        timestamp: z.string().describe("ISO 8601 arrival date and time"),
-        terminal: z.string().describe("Arrival terminal"),
-        gate: z.string().describe("Arrival gate"),
-      }),
-      totalDistanceInMiles: z
-        .number()
-        .describe("Total flight distance in miles"),
-    }),
+  const result = await streamText({
+    model: chatGpt4oModel,
+    prompt: `Generate flight status for flight number ${flightNumber} on ${date}. Return a JSON object with the following structure:
+    {
+      "flightNumber": "string",
+      "departure": {
+        "cityName": "string",
+        "airportCode": "string", 
+        "airportName": "string",
+        "timestamp": "string",
+        "terminal": "string",
+        "gate": "string"
+      },
+      "arrival": {
+        "cityName": "string",
+        "airportCode": "string",
+        "airportName": "string", 
+        "timestamp": "string",
+        "terminal": "string",
+        "gate": "string"
+      },
+      "totalDistanceInMiles": number
+    }`,
   });
 
-  return flightStatus;
+  const text = await result.text;
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Fallback data if parsing fails
+    return {
+      flightNumber,
+      departure: {
+        cityName: "Unknown",
+        airportCode: "UNK",
+        airportName: "Unknown Airport",
+        timestamp: new Date().toISOString(),
+        terminal: "T1",
+        gate: "A1"
+      },
+      arrival: {
+        cityName: "Unknown", 
+        airportCode: "UNK",
+        airportName: "Unknown Airport",
+        timestamp: new Date().toISOString(),
+        terminal: "T1",
+        gate: "A1"
+      },
+      totalDistanceInMiles: 500
+    };
+  }
 }
 
 export async function generateSampleFlightSearchResults({
@@ -47,33 +70,54 @@ export async function generateSampleFlightSearchResults({
   origin: string;
   destination: string;
 }) {
-  const { object: flightSearchResults } = await generateObject({
-    model: geminiFlashModel,
-    prompt: `Generate search results for flights from ${origin} to ${destination}, limit to 4 results`,
-    output: "array",
-    schema: z.object({
-      id: z
-        .string()
-        .describe("Unique identifier for the flight, like BA123, AA31, etc."),
-      departure: z.object({
-        cityName: z.string().describe("Name of the departure city"),
-        airportCode: z.string().describe("IATA code of the departure airport"),
-        timestamp: z.string().describe("ISO 8601 departure date and time"),
-      }),
-      arrival: z.object({
-        cityName: z.string().describe("Name of the arrival city"),
-        airportCode: z.string().describe("IATA code of the arrival airport"),
-        timestamp: z.string().describe("ISO 8601 arrival date and time"),
-      }),
-      airlines: z.array(
-        z.string().describe("Airline names, e.g., American Airlines, Emirates"),
-      ),
-      priceInUSD: z.number().describe("Flight price in US dollars"),
-      numberOfStops: z.number().describe("Number of stops during the flight"),
-    }),
+  const result = await streamText({
+    model: chatGpt4oModel,
+    prompt: `Generate search results for flights from ${origin} to ${destination}, limit to 4 results. Return a JSON array with the following structure:
+    [
+      {
+        "id": "string",
+        "departure": {
+          "cityName": "string",
+          "airportCode": "string",
+          "timestamp": "string"
+        },
+        "arrival": {
+          "cityName": "string",
+          "airportCode": "string",
+          "timestamp": "string"
+        },
+        "airlines": ["string"],
+        "priceInUSD": number,
+        "numberOfStops": number
+      }
+    ]`,
   });
 
-  return { flights: flightSearchResults };
+  const text = await result.text;
+  try {
+    const flights = JSON.parse(text);
+    return { flights };
+  } catch {
+    // Fallback data if parsing fails
+    return {
+      flights: [{
+        id: "AA123",
+        departure: {
+          cityName: origin,
+          airportCode: "UNK",
+          timestamp: new Date().toISOString()
+        },
+        arrival: {
+          cityName: destination,
+          airportCode: "UNK", 
+          timestamp: new Date().toISOString()
+        },
+        airlines: ["Unknown Airlines"],
+        priceInUSD: 500,
+        numberOfStops: 0
+      }]
+    };
+  }
 }
 
 export async function generateSampleSeatSelection({
@@ -81,24 +125,35 @@ export async function generateSampleSeatSelection({
 }: {
   flightNumber: string;
 }) {
-  const { object: rows } = await generateObject({
-    model: geminiFlashModel,
-    prompt: `Simulate available seats for flight number ${flightNumber}, 6 seats on each row and 5 rows in total, adjust pricing based on location of seat`,
-    output: "array",
-    schema: z.array(
-      z.object({
-        seatNumber: z.string().describe("Seat identifier, e.g., 12A, 15C"),
-        priceInUSD: z
-          .number()
-          .describe("Seat price in US dollars, less than $99"),
-        isAvailable: z
-          .boolean()
-          .describe("Whether the seat is available for booking"),
-      }),
-    ),
+  const result = await streamText({
+    model: chatGpt4oModel,
+    prompt: `Simulate available seats for flight number ${flightNumber}, 6 seats on each row and 5 rows in total, adjust pricing based on location of seat. Return a JSON array with the following structure:
+    [
+      {
+        "seatNumber": "string",
+        "priceInUSD": number,
+        "isAvailable": boolean
+      }
+    ]`,
   });
 
-  return { seats: rows };
+  const text = await result.text;
+  try {
+    const seats = JSON.parse(text);
+    return { seats };
+  } catch {
+    // Fallback data if parsing fails
+    return {
+      seats: [
+        { seatNumber: "1A", priceInUSD: 25, isAvailable: true },
+        { seatNumber: "1B", priceInUSD: 25, isAvailable: false },
+        { seatNumber: "1C", priceInUSD: 25, isAvailable: true },
+        { seatNumber: "1D", priceInUSD: 25, isAvailable: true },
+        { seatNumber: "1E", priceInUSD: 25, isAvailable: false },
+        { seatNumber: "1F", priceInUSD: 25, isAvailable: true }
+      ]
+    };
+  }
 }
 
 export async function generateReservationPrice(props: {
@@ -120,15 +175,19 @@ export async function generateReservationPrice(props: {
   };
   passengerName: string;
 }) {
-  const { object: reservation } = await generateObject({
-    model: geminiFlashModel,
-    prompt: `Generate price for the following reservation \n\n ${JSON.stringify(props, null, 2)}`,
-    schema: z.object({
-      totalPriceInUSD: z
-        .number()
-        .describe("Total reservation price in US dollars"),
-    }),
+  const result = await streamText({
+    model: chatGpt4oModel,
+    prompt: `Generate price for the following reservation. Return a JSON object with totalPriceInUSD:
+    ${JSON.stringify(props, null, 2)}`,
   });
 
-  return reservation;
+  const text = await result.text;
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Fallback data if parsing fails
+    return {
+      totalPriceInUSD: 1000
+    };
+  }
 }

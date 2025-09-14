@@ -1,21 +1,19 @@
 import "server-only";
 
 import { genSaltSync, hashSync } from "bcrypt-ts";
-import { desc, eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { supabase } from "../lib/supabase/server";
 
-import { user, chat, User, reservation } from "./schema";
-
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
-let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
-let db = drizzle(client);
+import { User } from "./schema";
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    const { data, error } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', email);
+    
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error("Failed to get user from database");
     throw error;
@@ -27,7 +25,13 @@ export async function createUser(email: string, password: string) {
   let hash = hashSync(password, salt);
 
   try {
-    return await db.insert(user).values({ email, password: hash });
+    const { data, error } = await supabase
+      .from('User')
+      .insert({ email, password: hash })
+      .select();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Failed to create user in database");
     throw error;
@@ -44,23 +48,35 @@ export async function saveChat({
   userId: string;
 }) {
   try {
-    const selectedChats = await db.select().from(chat).where(eq(chat.id, id));
+    const { data: existingChat } = await supabase
+      .from('Chat')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (selectedChats.length > 0) {
-      return await db
-        .update(chat)
-        .set({
-          messages: JSON.stringify(messages),
-        })
-        .where(eq(chat.id, id));
+    if (existingChat) {
+      const { data, error } = await supabase
+        .from('Chat')
+        .update({ messages: JSON.stringify(messages) })
+        .eq('id', id)
+        .select();
+      
+      if (error) throw error;
+      return data;
     }
 
-    return await db.insert(chat).values({
-      id,
-      createdAt: new Date(),
-      messages: JSON.stringify(messages),
-      userId,
-    });
+    const { data, error } = await supabase
+      .from('Chat')
+      .insert({
+        id,
+        createdAt: new Date().toISOString(),
+        messages: JSON.stringify(messages),
+        userId,
+      })
+      .select();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Failed to save chat in database");
     throw error;
@@ -69,7 +85,14 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    return await db.delete(chat).where(eq(chat.id, id));
+    const { data, error } = await supabase
+      .from('Chat')
+      .delete()
+      .eq('id', id)
+      .select();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Failed to delete chat by id from database");
     throw error;
@@ -78,11 +101,14 @@ export async function deleteChatById({ id }: { id: string }) {
 
 export async function getChatsByUserId({ id }: { id: string }) {
   try {
-    return await db
-      .select()
-      .from(chat)
-      .where(eq(chat.userId, id))
-      .orderBy(desc(chat.createdAt));
+    const { data, error } = await supabase
+      .from('Chat')
+      .select('*')
+      .eq('userId', id)
+      .order('createdAt', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error("Failed to get chats by user from database");
     throw error;
@@ -91,8 +117,14 @@ export async function getChatsByUserId({ id }: { id: string }) {
 
 export async function getChatById({ id }: { id: string }) {
   try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
-    return selectedChat;
+    const { data, error } = await supabase
+      .from('Chat')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error("Failed to get chat by id from database");
     throw error;
@@ -108,22 +140,30 @@ export async function createReservation({
   userId: string;
   details: any;
 }) {
-  return await db.insert(reservation).values({
-    id,
-    createdAt: new Date(),
-    userId,
-    hasCompletedPayment: false,
-    details: JSON.stringify(details),
-  });
+  const { data, error } = await supabase
+    .from('Reservation')
+    .insert({
+      id,
+      createdAt: new Date().toISOString(),
+      userId,
+      hasCompletedPayment: false,
+      details: JSON.stringify(details),
+    })
+    .select();
+  
+  if (error) throw error;
+  return data;
 }
 
 export async function getReservationById({ id }: { id: string }) {
-  const [selectedReservation] = await db
-    .select()
-    .from(reservation)
-    .where(eq(reservation.id, id));
-
-  return selectedReservation;
+  const { data, error } = await supabase
+    .from('Reservation')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) throw error;
+  return data;
 }
 
 export async function updateReservation({
@@ -133,10 +173,12 @@ export async function updateReservation({
   id: string;
   hasCompletedPayment: boolean;
 }) {
-  return await db
-    .update(reservation)
-    .set({
-      hasCompletedPayment,
-    })
-    .where(eq(reservation.id, id));
+  const { data, error } = await supabase
+    .from('Reservation')
+    .update({ hasCompletedPayment })
+    .eq('id', id)
+    .select();
+  
+  if (error) throw error;
+  return data;
 }

@@ -1,14 +1,11 @@
-import { google } from "@ai-sdk/google";
-import { experimental_wrapLanguageModel as wrapLanguageModel } from "ai";
+import { openai } from "@ai-sdk/openai";
 
 import { customMiddleware } from "./custom-middleware";
 
-export const geminiProModel = wrapLanguageModel({
-  model: google("gemini-1.5-pro-002"),
-  middleware: customMiddleware,
-});
+export const chatGpt4oModel = openai("gpt-4o");
 
-export const geminiFlashModel = wrapLanguageModel({
-  model: google("gemini-1.5-flash-002"),
-  middleware: customMiddleware,
-});
+export const chatGpt4oMiniModel = openai("gpt-4o-mini");
+
+// Keep the old exports for compatibility
+export const geminiProModel = chatGpt4oModel;
+export const geminiFlashModel = chatGpt4oMiniModel;

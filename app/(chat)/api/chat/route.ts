@@ -1,13 +1,9 @@
-import { convertToCoreMessages, Message, streamText } from "ai";
+import { convertToCoreMessages, Message, streamText, tool } from "ai";
 import { z } from "zod";
 
-import { geminiProModel } from "@/ai";
-import {
-  generateReservationPrice,
-  generateSampleFlightSearchResults,
-  generateSampleFlightStatus,
-  generateSampleSeatSelection,
-} from "@/ai/actions";
+import { chatGpt4oModel } from "@/ai";
+import { quoteWorkflow } from "@/lib/workflows/quote-workflow";
+import { getArkcuttKnowledge } from "@/ai/arkcutt-actions";
 import { auth } from "@/app/(auth)/auth";
 import {
   createReservation,
@@ -17,6 +13,91 @@ import {
   saveChat,
 } from "@/db/queries";
 import { generateUUID } from "@/lib/utils";
+
+function parseShapeDescription(description: string) {
+  const lowerDesc = description.toLowerCase();
+  
+  // Detectar tipo de forma
+  let shape = 'custom';
+  if (lowerDesc.includes('rectang') || lowerDesc.includes('cuadrado')) {
+    shape = 'rectangle';
+  } else if (lowerDesc.includes('circ') || lowerDesc.includes('redond')) {
+    shape = 'circle';
+  } else if (lowerDesc.includes('oval') || lowerDesc.includes('elipse')) {
+    shape = 'ellipse';
+  }
+  
+  // Extraer dimensiones usando regex
+  const dimensions: any = {};
+  
+  // Buscar patrones como "100x50", "100 x 50", "ancho 100", "alto 50", etc.
+  const dimensionPatterns = [
+    /(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)/i, // "100x50"
+    /ancho\s*:?\s*(\d+(?:\.\d+)?)/i, // "ancho: 100"
+    /alto\s*:?\s*(\d+(?:\.\d+)?)/i, // "alto: 50"
+    /width\s*:?\s*(\d+(?:\.\d+)?)/i, // "width: 100"
+    /height\s*:?\s*(\d+(?:\.\d+)?)/i, // "height: 50"
+    /diámetro\s*:?\s*(\d+(?:\.\d+)?)/i, // "diámetro: 50"
+    /diameter\s*:?\s*(\d+(?:\.\d+)?)/i, // "diameter: 50"
+    /radio\s*:?\s*(\d+(?:\.\d+)?)/i, // "radio: 25"
+    /radius\s*:?\s*(\d+(?:\.\d+)?)/i, // "radius: 25"
+  ];
+  
+  // Aplicar patrones
+  const xyMatch = description.match(dimensionPatterns[0]);
+  if (xyMatch) {
+    dimensions.width = parseFloat(xyMatch[1]);
+    dimensions.height = parseFloat(xyMatch[2]);
+  }
+  
+  const widthMatch = description.match(dimensionPatterns[2]) || description.match(dimensionPatterns[4]);
+  if (widthMatch) dimensions.width = parseFloat(widthMatch[1]);
+  
+  const heightMatch = description.match(dimensionPatterns[3]) || description.match(dimensionPatterns[5]);
+  if (heightMatch) dimensions.height = parseFloat(heightMatch[1]);
+  
+  const diameterMatch = description.match(dimensionPatterns[6]) || description.match(dimensionPatterns[7]);
+  if (diameterMatch) {
+    dimensions.diameter = parseFloat(diameterMatch[1]);
+    dimensions.radius = dimensions.diameter / 2;
+  }
+  
+  const radiusMatch = description.match(dimensionPatterns[8]) || description.match(dimensionPatterns[9]);
+  if (radiusMatch) {
+    dimensions.radius = parseFloat(radiusMatch[1]);
+    dimensions.diameter = dimensions.radius * 2;
+  }
+  
+  // Detectar características adicionales
+  const features = [];
+  if (lowerDesc.includes('agujero') || lowerDesc.includes('hole')) {
+    features.push('hole');
+  }
+  if (lowerDesc.includes('ranura') || lowerDesc.includes('slot')) {
+    features.push('slot');
+  }
+  if (lowerDesc.includes('redondeo') || lowerDesc.includes('fillet')) {
+    features.push('fillet');
+  }
+  
+  // Valores por defecto si no se detectan dimensiones
+  if (Object.keys(dimensions).length === 0) {
+    if (shape === 'circle') {
+      dimensions.diameter = 50;
+      dimensions.radius = 25;
+    } else {
+      dimensions.width = 100;
+      dimensions.height = 50;
+    }
+  }
+  
+  return {
+    shape,
+    dimensions,
+    features,
+    originalDescription: description
+  };
+}
 
 export async function POST(request: Request) {
   const { id, messages }: { id: string; messages: Array<Message> } =
@@ -33,186 +114,105 @@ export async function POST(request: Request) {
   );
 
   const result = await streamText({
-    model: geminiProModel,
-    system: `\n
-        - you help users book flights!
-        - keep your responses limited to a sentence.
-        - DO NOT output lists.
-        - after every tool call, pretend you're showing the result to the user and keep your response limited to a phrase.
-        - today's date is ${new Date().toLocaleDateString()}.
-        - ask follow up questions to nudge user into the optimal flow
-        - ask for any details you don't know, like name of passenger, etc.'
-        - C and D are aisle seats, A and F are window seats, B and E are middle seats
-        - assume the most popular airports for the origin and destination
-        - here's the optimal flow
-          - search for flights
-          - choose flight
-          - select seats
-          - create reservation (ask user whether to proceed with payment or change reservation)
-          - authorize payment (requires user consent, wait for user to finish payment and let you know when done)
-          - display boarding pass (DO NOT display boarding pass without verifying payment)
-        '
-      `,
+    model: chatGpt4oModel,
+    system: `
+        Eres el Agente Arkcutt, especialista en servicios de corte láser y fabricación digital.
+        
+        MATERIALES DISPONIBLES (REALES):
+        - DM (Fibra de Madera): 2.5-10mm | €4.80-€22.93/plancha
+        - Contrachapado: 4-5mm | €18.13-€20.68/plancha  
+        - Madera Balsa: 1-8mm | €3.69-€12.25/plancha
+        - Metacrilato (Transparente/Blanco/Lila): 2-8mm | €30.33-€82.91/plancha
+        - Cartón Gris: 2mm | €6.32/plancha
+        
+        HERRAMIENTAS DISPONIBLES:
+        - generate_quote: Para iniciar presupuestación con wizard interactivo
+        - arkcuttKnowledge: Para consultas sobre materiales, servicios, precios
+        - create_dxf: Para generar archivos DXF desde descripciones
+        
+        ESPECIALIDADES:
+        - Presupuestación automática con análisis DXF
+        - Corte láser de precisión en maderas y metacrilatos
+        - Generación de archivos DXF personalizados
+        - Optimización de material y costes
+        
+        FLUJO PARA PRESUPUESTOS:
+        1. Usuario menciona "presupuesto" → Usar generate_quote con step: 'start'
+        2. Guiar through wizard: DXF upload → Material → Contacto → Entrega
+        3. Conectar con backends reales para análisis y cálculo
+        
+        TALLERES: Barcelona, Madrid, Málaga (recogida GRATIS)
+        
+        PERSONALIDAD: Técnico, preciso, enfocado en soluciones prácticas
+        
+        Fecha actual: ${new Date().toLocaleDateString()}
+        `,
     messages: coreMessages,
     tools: {
-      getWeather: {
-        description: "Get the current weather at a location",
+      generate_quote: tool({
+        description: "Inicia el proceso de presupuestación de corte láser con wizard interactivo",
         parameters: z.object({
-          latitude: z.number().describe("Latitude coordinate"),
-          longitude: z.number().describe("Longitude coordinate"),
+          step: z.enum(['start']).describe("Iniciar el proceso de presupuestación")
         }),
-        execute: async ({ latitude, longitude }) => {
-          const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&hourly=temperature_2m&daily=sunrise,sunset&timezone=auto`,
-          );
-
-          const weatherData = await response.json();
-          return weatherData;
-        },
-      },
-      displayFlightStatus: {
-        description: "Display the status of a flight",
-        parameters: z.object({
-          flightNumber: z.string().describe("Flight number"),
-          date: z.string().describe("Date of the flight"),
-        }),
-        execute: async ({ flightNumber, date }) => {
-          const flightStatus = await generateSampleFlightStatus({
-            flightNumber,
-            date,
-          });
-
-          return flightStatus;
-        },
-      },
-      searchFlights: {
-        description: "Search for flights based on the given parameters",
-        parameters: z.object({
-          origin: z.string().describe("Origin airport or city"),
-          destination: z.string().describe("Destination airport or city"),
-        }),
-        execute: async ({ origin, destination }) => {
-          const results = await generateSampleFlightSearchResults({
-            origin,
-            destination,
-          });
-
-          return results;
-        },
-      },
-      selectSeats: {
-        description: "Select seats for a flight",
-        parameters: z.object({
-          flightNumber: z.string().describe("Flight number"),
-        }),
-        execute: async ({ flightNumber }) => {
-          const seats = await generateSampleSeatSelection({ flightNumber });
-          return seats;
-        },
-      },
-      createReservation: {
-        description: "Display pending reservation details",
-        parameters: z.object({
-          seats: z.string().array().describe("Array of selected seat numbers"),
-          flightNumber: z.string().describe("Flight number"),
-          departure: z.object({
-            cityName: z.string().describe("Name of the departure city"),
-            airportCode: z.string().describe("Code of the departure airport"),
-            timestamp: z.string().describe("ISO 8601 date of departure"),
-            gate: z.string().describe("Departure gate"),
-            terminal: z.string().describe("Departure terminal"),
-          }),
-          arrival: z.object({
-            cityName: z.string().describe("Name of the arrival city"),
-            airportCode: z.string().describe("Code of the arrival airport"),
-            timestamp: z.string().describe("ISO 8601 date of arrival"),
-            gate: z.string().describe("Arrival gate"),
-            terminal: z.string().describe("Arrival terminal"),
-          }),
-          passengerName: z.string().describe("Name of the passenger"),
-        }),
-        execute: async (props) => {
-          const { totalPriceInUSD } = await generateReservationPrice(props);
-          const session = await auth();
-
-          const id = generateUUID();
-
-          if (session && session.user && session.user.id) {
-            await createReservation({
-              id,
-              userId: session.user.id,
-              details: { ...props, totalPriceInUSD },
-            });
-
-            return { id, ...props, totalPriceInUSD };
-          } else {
+        execute: async ({ step }) => {
+          if (step === 'start') {
             return {
-              error: "User is not signed in to perform this action!",
+              type: 'ui',
+              component: 'QuoteWizard',
+              message: '¡Perfecto! Te voy a ayudar a generar un presupuesto de corte láser. Empezamos subiendo tu archivo DXF para analizarlo.',
+              data: {
+                step: 'upload',
+                instructions: [
+                  'Sube tu archivo DXF (formato .dxf o .dwg)',
+                  'El sistema analizará automáticamente las dimensiones y complejidad',
+                  'Después podrás seleccionar el material y método de entrega',
+                  'Obtendrás un presupuesto detallado al instante'
+                ]
+              }
             };
           }
+          return { error: 'Invalid step' };
         },
-      },
-      authorizePayment: {
-        description:
-          "User will enter credentials to authorize payment, wait for user to repond when they are done",
+      }),
+      arkcuttKnowledge: tool({
+        description: "Consultar base de conocimiento de Arkcutt (servicios, materiales, capacidades)",
         parameters: z.object({
-          reservationId: z
-            .string()
-            .describe("Unique identifier for the reservation"),
+          query: z.string().describe("Pregunta o consulta sobre Arkcutt"),
         }),
-        execute: async ({ reservationId }) => {
-          return { reservationId };
+        execute: async ({ query }) => {
+          const knowledge = await getArkcuttKnowledge(query);
+          return { response: knowledge };
         },
-      },
-      verifyPayment: {
-        description: "Verify payment status",
+      }),
+      create_dxf: tool({
+        description: "Genera archivos DXF desde especificaciones técnicas o descripción de formas",
         parameters: z.object({
-          reservationId: z
-            .string()
-            .describe("Unique identifier for the reservation"),
+          input_type: z.enum(['description']).describe("Tipo de entrada para generar DXF"),
+          specifications: z.string().describe("Descripción detallada de la forma a crear (ej: 'rectángulo de 100x50mm con agujero de 10mm en el centro')"),
         }),
-        execute: async ({ reservationId }) => {
-          const reservation = await getReservationById({ id: reservationId });
-
-          if (reservation.hasCompletedPayment) {
-            return { hasCompletedPayment: true };
-          } else {
-            return { hasCompletedPayment: false };
+        execute: async ({ input_type, specifications }) => {
+          if (input_type === 'description') {
+            // Analizar la descripción y extraer parámetros
+            const parsedSpecs = parseShapeDescription(specifications);
+            return {
+              type: 'dxf_generated',
+              message: 'He generado un archivo DXF basado en tu descripcion: ' + specifications,
+              data: {
+                fileName: 'generated_' + Date.now() + '.dxf',
+                specifications: parsedSpecs,
+                preview: 'Forma generada: ' + parsedSpecs.shape + ' con dimensiones ' + (parsedSpecs.dimensions.width || parsedSpecs.dimensions.diameter) + 'mm',
+                downloadUrl: '/api/dxf/download/' + Date.now(), // Placeholder
+                instructions: [
+                  'El archivo DXF ha sido generado segun tus especificaciones',
+                  'Puedes descargarlo directamente o usarlo para obtener un presupuesto',
+                  'Te gustaria generar un presupuesto con este archivo?'
+                ]
+              }
+            };
           }
+          return { error: 'Tipo de entrada no soportado' };
         },
-      },
-      displayBoardingPass: {
-        description: "Display a boarding pass",
-        parameters: z.object({
-          reservationId: z
-            .string()
-            .describe("Unique identifier for the reservation"),
-          passengerName: z
-            .string()
-            .describe("Name of the passenger, in title case"),
-          flightNumber: z.string().describe("Flight number"),
-          seat: z.string().describe("Seat number"),
-          departure: z.object({
-            cityName: z.string().describe("Name of the departure city"),
-            airportCode: z.string().describe("Code of the departure airport"),
-            airportName: z.string().describe("Name of the departure airport"),
-            timestamp: z.string().describe("ISO 8601 date of departure"),
-            terminal: z.string().describe("Departure terminal"),
-            gate: z.string().describe("Departure gate"),
-          }),
-          arrival: z.object({
-            cityName: z.string().describe("Name of the arrival city"),
-            airportCode: z.string().describe("Code of the arrival airport"),
-            airportName: z.string().describe("Name of the arrival airport"),
-            timestamp: z.string().describe("ISO 8601 date of arrival"),
-            terminal: z.string().describe("Arrival terminal"),
-            gate: z.string().describe("Arrival gate"),
-          }),
-        }),
-        execute: async (boardingPass) => {
-          return boardingPass;
-        },
-      },
+      }),
     },
     onFinish: async ({ responseMessages }) => {
       if (session.user && session.user.id) {

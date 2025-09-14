@@ -7,9 +7,10 @@ import { ThemeProvider } from "@/components/custom/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gemini.vercel.ai"),
-  title: "Next.js Gemini Chatbot",
-  description: "Next.js chatbot template using the AI SDK and Gemini.",
+  metadataBase: new URL("https://arkcutt.com"),
+  title: "Agente Arkcutt - Especialista en Corte Láser",
+  description: "Agente inteligente especializado en presupuestación, consultas y diseño para servicios de corte láser. Análisis DXF, cálculos precisos y asesoramiento técnico.",
+  keywords: ["corte láser", "presupuesto", "DXF", "fabricación digital", "Arkcutt", "análisis técnico"],
 };
 
 export default async function RootLayout({
