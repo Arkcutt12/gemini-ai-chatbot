@@ -1,8 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
 import { Clock, Package, Ruler, Zap } from "lucide-react";
 
 interface QuoteResultProps {
@@ -27,7 +28,7 @@ export function QuoteResult({ quote }: QuoteResultProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
+          <Package className="size-5" />
           Presupuesto de Corte Láser
         </CardTitle>
         <Badge variant="outline" className="w-fit">
@@ -39,7 +40,7 @@ export function QuoteResult({ quote }: QuoteResultProps) {
         {/* Especificaciones Técnicas */}
         <div className="space-y-3">
           <h4 className="font-semibold flex items-center gap-2">
-            <Ruler className="h-4 w-4" />
+            <Ruler className="size-4" />
             Especificaciones Técnicas
           </h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -58,7 +59,7 @@ export function QuoteResult({ quote }: QuoteResultProps) {
             <div>
               <span className="text-muted-foreground">Tiempo estimado:</span>
               <p className="font-medium flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="size-3" />
                 {quote.specifications.machineTime} min
               </p>
             </div>
@@ -96,7 +97,7 @@ export function QuoteResult({ quote }: QuoteResultProps) {
         {/* Tiempo de Entrega */}
         <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-blue-600" />
+            <Zap className="size-4 text-blue-600" />
             <span className="font-medium text-blue-900">Tiempo de entrega:</span>
           </div>
           <Badge variant="secondary" className="bg-blue-100 text-blue-800">

@@ -1,8 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+
 import { FileText, Ruler, Activity, Square } from "lucide-react";
 
 interface DXFAnalysisProps {
@@ -32,7 +33,7 @@ export function DXFAnalysis({ analysis }: DXFAnalysisProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
+          <FileText className="size-5" />
           Análisis de Archivo DXF
         </CardTitle>
         <p className="text-sm text-muted-foreground">
@@ -44,7 +45,7 @@ export function DXFAnalysis({ analysis }: DXFAnalysisProps) {
         {/* Dimensiones */}
         <div className="space-y-3">
           <h4 className="font-semibold flex items-center gap-2">
-            <Ruler className="h-4 w-4" />
+            <Ruler className="size-4" />
             Dimensiones
           </h4>
           <div className="grid grid-cols-3 gap-4">
@@ -72,7 +73,7 @@ export function DXFAnalysis({ analysis }: DXFAnalysisProps) {
         {/* Complejidad */}
         <div className="space-y-3">
           <h4 className="font-semibold flex items-center gap-2">
-            <Activity className="h-4 w-4" />
+            <Activity className="size-4" />
             Complejidad del Corte
           </h4>
           <div className="flex items-center gap-4">
@@ -91,7 +92,7 @@ export function DXFAnalysis({ analysis }: DXFAnalysisProps) {
         {/* Métricas de Corte */}
         <div className="space-y-3">
           <h4 className="font-semibold flex items-center gap-2">
-            <Square className="h-4 w-4" />
+            <Square className="size-4" />
             Métricas de Corte
           </h4>
           <div className="grid grid-cols-2 gap-4">
